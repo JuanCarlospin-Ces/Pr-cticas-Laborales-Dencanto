@@ -53,46 +53,53 @@ def crear_Tablas_Base_De_Datos():
     # Tabla Destino
     c.execute("""
     CREATE TABLE IF NOT EXISTS Destino (
+        idDestino VARCHAR(5) NOT NULL,
         Ciudad VARCHAR(47) NOT NULL,
         Alojamiento VARCHAR(47) NOT NULL,
-        PRIMARY KEY (Ciudad)
+        PRIMARY KEY (idDestino)
     )
     """)
     
     # Tabla Curso
     c.execute("""
     CREATE TABLE IF NOT EXISTS Curso (
+        idCurso VARCHAR(5) NOT NULL,
         Tipo VARCHAR(47) NOT NULL,
         Escuela VARCHAR(47) NOT NULL,
-        PRIMARY KEY (Escuela)
+        PRIMARY KEY (idCurso)
     )
     """)
     
     # Tabla ubicado
     c.execute("""
     CREATE TABLE IF NOT EXISTS ubicado (
+
+        idCurso VARCHAR(5) NOT NULL,
+        idDestino VARCHAR(5) NOT NULL,
         `Fecha Inicio Curso` DATE NOT NULL,
         `Fecha Fin Curso` DATE NOT NULL,
-        Escuela VARCHAR(47) NOT NULL,
-        Ciudad VARCHAR(47) NOT NULL,
-        PRIMARY KEY(Ciudad, Escuela),
-        FOREIGN KEY(Ciudad) REFERENCES Destino (Ciudad),
-        FOREIGN KEY(Escuela) REFERENCES Curso (Escuela)
+        
+        PRIMARY KEY (idCurso, idDestino),
+
+        FOREIGN KEY (idCurso) REFERENCES Curso (idCurso),
+        FOREIGN KEY (idDestino) REFERENCES Destino (idDestino)
     )
     """)
     
     # Tabla viaja
     c.execute("""
     CREATE TABLE IF NOT EXISTS viaja (
+              
         Precio DECIMAL(10,2) NOT NULL,
         `Fecha Salida` DATE NOT NULL,
         `Fecha Vuelta` DATE NOT NULL,
         `Identificador de grupo` VARCHAR(10) NOT NULL,
-        Escuela VARCHAR(47) NOT NULL,
-        Ciudad VARCHAR(47) NOT NULL,
-        PRIMARY KEY(`Fecha Salida`, `Fecha Vuelta`, `Identificador de grupo`, Escuela, Ciudad),
+        idCurso VARCHAR(5) NOT NULL,
+        idDestino VARCHAR(5) NOT NULL,
+
+        PRIMARY KEY(`Fecha Salida`, `Fecha Vuelta`, `Identificador de grupo`,idCurso, idDestino),
         FOREIGN KEY(`Identificador de grupo`) REFERENCES Grupo (`Identificador de grupo`),
-        FOREIGN KEY(Escuela, Ciudad) REFERENCES ubicado (Escuela, Ciudad)
+        FOREIGN KEY(idCurso, idDestino) REFERENCES ubicado (idCurso, idDestino)
     )
     """)
     

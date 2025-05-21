@@ -42,59 +42,63 @@ def insertar_grupo(identificador_grupo, numero_integrantes):
     print(f"Se ha añadido el grupo '{identificador_grupo}' con {numero_integrantes} integrantes a la base de datos.")
 
 # DESTINO
-def insertar_destino(ciudad, alojamiento):
+def insertar_destino(idDestino, ciudad, alojamiento):
     c.execute("""
-        INSERT INTO Destino (Ciudad, Alojamiento)
-        VALUES (%s, %s)
-    """, (ciudad, alojamiento))
+        INSERT INTO Destino (idDestino, Ciudad, Alojamiento)
+        VALUES (%s, %s, %s)
+    """, (idDestino, ciudad, alojamiento))
 
     db.commit()
-    print(f"Se ha añadido el destino '{ciudad}' con alojamiento '{alojamiento}' a la base de datos.")
+    print(f"Se ha añadido el destino '{ciudad}' con ID '{idDestino}'.")
 
 # CURSO 
-def insertar_curso(tipo, escuela):
+def insertar_curso(idCurso, tipo, escuela):
     c.execute("""
-        INSERT INTO Curso (Tipo, Escuela)
-        VALUES (%s, %s)
-    """, (tipo, escuela))
+        INSERT INTO Curso (idCurso, Tipo, Escuela)
+        VALUES (%s, %s, %s)
+    """, (idCurso, tipo, escuela))
 
     db.commit()
-    print(f"Se ha añadido el curso '{tipo}' en la escuela '{escuela}' a la base de datos.")
+    print(f"Se ha añadido el curso '{tipo}' en la escuela '{escuela}' con ID '{idCurso}'.")
 
 # ------------------------------
 # AGREGACIONES
 # ------------------------------
 
 # UBICADO
-def insertar_ubicado(fecha_inicio, fecha_fin, escuela, ciudad):
+def insertar_ubicado(idCurso, idDestino, fecha_inicio, fecha_fin):
     c.execute("""
-        INSERT INTO ubicado (`Fecha Inicio Curso`, `Fecha Fin Curso`, Escuela, Ciudad)
+        INSERT INTO ubicado (idCurso, idDestino, `Fecha Inicio Curso`, `Fecha Fin Curso`)
         VALUES (%s, %s, %s, %s)
-    """, (fecha_inicio, fecha_fin, escuela, ciudad))
-
+    """, (idCurso, idDestino, fecha_inicio, fecha_fin))
+    
     db.commit()
-    print(f"Se ha registrado la ubicación del curso en '{escuela}' en la ciudad '{ciudad}' desde {fecha_inicio} hasta {fecha_fin}.")
+    print(f"Se ha registrado la ubicación del curso '{idCurso}' en el destino '{idDestino}' desde {fecha_inicio} hasta {fecha_fin}.")
+
+
 
 # ------------------------------
 # CONEXIONES
 # ------------------------------
 
 # VIAJE
-def insertar_viaje(precio, fecha_salida, fecha_vuelta, identificador_grupo, escuela, ciudad):
+def insertar_viaje(precio, fecha_salida, fecha_vuelta, identificador_grupo, idCurso, idDestino):
     c.execute("""
-        INSERT INTO viaja (Precio, `Fecha Salida`, `Fecha Vuelta`, `Identificador de grupo`, Escuela, Ciudad)
+        INSERT INTO viaja (Precio, `Fecha Salida`, `Fecha Vuelta`, `Identificador de grupo`, idCurso, idDestino)
         VALUES (%s, %s, %s, %s, %s, %s)
-    """, (precio, fecha_salida, fecha_vuelta, identificador_grupo, escuela, ciudad))
+    """, (precio, fecha_salida, fecha_vuelta, identificador_grupo, idCurso, idDestino))
 
     db.commit()
-    print(f"Se ha añadido el viaje del grupo '{identificador_grupo}' a '{ciudad}' con escuela '{escuela}', por {precio}€.")
+    print(f"Se ha añadido el viaje para el grupo '{identificador_grupo}' asociado al curso '{idCurso}' y destino '{idDestino}'.")
+
 
 # PERTENECE
-def insertar_pertenence(DNI, identificador_grupo):
+def insertar_pertenece(DNI, identificador_grupo):
     c.execute("""
         INSERT INTO pertenece (DNI, `Identificador de grupo`)
         VALUES (%s, %s)
     """, (DNI, identificador_grupo))
+
     db.commit()
     print(f"La persona con DNI '{DNI}' ha sido asociada al grupo '{identificador_grupo}'.")
 
@@ -133,20 +137,23 @@ insertar_grupo(identificador_grupo, numero_integrantes)
 # Ejemplo de Instanciación de DESTINO
 # ------------------------------
 
+idDestino = "DST01" 
 ciudad = "Granada"
 alojamiento = "Hotel Sierra"
 
 # Llamada a la función para insertar el destino
-insertar_destino(ciudad, alojamiento)
+insertar_destino(idDestino, ciudad, alojamiento)
 
 # ------------------------------
 # Ejemplo de Instanciación de CURSO
 # ------------------------------
+
+idCurso = "CRS01"
 tipo = "Formación profesor"
 escuela = "Escuela prueba"
 
 # Llamada a la función para insertar el curso
-insertar_curso(tipo, escuela)
+insertar_curso(idCurso, tipo, escuela)
 
 # ------------------------------
 # Ejemplo de Instanciación de UBICADO
@@ -158,7 +165,8 @@ escuela = "Escuela prueba"
 ciudad = "Granada"
 
 # Llamada a la función para insertar la ubicación del curso
-insertar_ubicado(fecha_inicio, fecha_fin, escuela, ciudad)
+insertar_ubicado(idCurso, idDestino, fecha_inicio, fecha_fin)
+
 
 # ------------------------------
 # Ejemplo de Instanciación de VIAJA
@@ -172,7 +180,8 @@ escuela = "Escuela prueba"
 ciudad = "Granada"
 
 # Llamada a la función para insertar el viaje
-insertar_viaje(precio, fecha_salida, fecha_vuelta, identificador_grupo, escuela, ciudad)
+insertar_viaje(precio, fecha_salida, fecha_vuelta, identificador_grupo, idCurso, idDestino)
+
 
 
 # ------------------------------
@@ -183,7 +192,7 @@ DNI = "12345678Z"
 identificador_grupo = "GRP001"
 
 # Llamada a la función para insertar la pertenencia
-insertar_pertenence(DNI, identificador_grupo)
+insertar_pertenece(DNI, identificador_grupo)
 
 
 # Cierro el cursor y la conexión a la base de datos
