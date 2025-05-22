@@ -104,6 +104,141 @@ def insertar_pertenece(DNI, identificador_grupo):
 
 
 # ##############################
+# FUNCIONES PARA REALIZAR UPDATES
+# ##############################
+
+def actualizar_persona(DNI, nombre=None, apellido1=None, apellido2=None, fecha_nacimiento=None, ciudad_origen=None):
+    campos = []
+    valores = []
+    
+    if nombre:
+        campos.append("Nombre = %s")
+        valores.append(nombre)
+    if apellido1:
+        campos.append("Apellido1 = %s")
+        valores.append(apellido1)
+    if apellido2:
+        campos.append("Apellido2 = %s")
+        valores.append(apellido2)
+    if fecha_nacimiento:
+        campos.append("`Fecha de nacimiento` = %s")
+        valores.append(fecha_nacimiento)
+    if ciudad_origen:
+        campos.append("Ciudad_Origen = %s")
+        valores.append(ciudad_origen)
+
+    if campos:
+        sql = f"UPDATE Persona SET {', '.join(campos)} WHERE DNI = %s"
+        valores.append(DNI)
+        c.execute(sql, valores)
+        db.commit()
+        print(f"Persona con DNI {DNI} actualizada correctamente.")
+    else:
+            print("No se especificaron campos a actualizar.")
+
+def actualizar_grupo(identificador_grupo, numero_integrantes):
+    c.execute("""
+        UPDATE Grupo 
+        SET `Numero de integrantes` = %s 
+        WHERE `Identificador de grupo` = %s
+    """, (numero_integrantes, identificador_grupo))
+    
+    db.commit()
+    print(f"Grupo '{identificador_grupo}' actualizado con {numero_integrantes} integrantes.")
+
+def actualizar_destino(idDestino, ciudad=None, alojamiento=None):
+    campos = []
+    valores = []
+    
+    if ciudad:
+        campos.append("Ciudad = %s")
+        valores.append(ciudad)
+    if alojamiento:
+        campos.append("Alojamiento = %s")
+        valores.append(alojamiento)
+    
+    if campos:
+        sql = f"UPDATE Destino SET {', '.join(campos)} WHERE idDestino = %s"
+        valores.append(idDestino)
+        c.execute(sql, valores)
+        db.commit()
+        print(f"Destino '{idDestino}' actualizado correctamente.")
+    else:
+        print("No se especificaron campos a actualizar.")
+
+def actualizar_curso(idCurso, tipo=None, escuela=None):
+    campos = []
+    valores = []
+
+    if tipo:
+        campos.append("Tipo = %s")
+        valores.append(tipo)
+    if escuela:
+        campos.append("Escuela = %s")
+        valores.append(escuela)
+
+    if campos:
+        sql = f"UPDATE Curso SET {', '.join(campos)} WHERE idCurso = %s"
+        valores.append(idCurso)
+        c.execute(sql, valores)
+        db.commit()
+        print(f"Curso '{idCurso}' actualizado correctamente.")
+    else:
+        print("No se especificaron campos a actualizar.")
+
+def actualizar_viaje(identificador_grupo, idCurso, idDestino, precio=None, fecha_salida=None, fecha_vuelta=None):
+    campos = []
+    valores = []
+
+    if precio:
+        campos.append("Precio = %s")
+        valores.append(precio)
+    if fecha_salida:
+        campos.append("`Fecha Salida` = %s")
+        valores.append(fecha_salida)
+    if fecha_vuelta:
+        campos.append("`Fecha Vuelta` = %s")
+        valores.append(fecha_vuelta)
+
+    if campos:
+        sql = f"""
+            UPDATE viaja 
+            SET {', '.join(campos)} 
+            WHERE `Identificador de grupo` = %s AND idCurso = %s AND idDestino = %s
+        """
+        valores.extend([identificador_grupo, idCurso, idDestino])
+        c.execute(sql, valores)
+        db.commit()
+        print(f"Viaje de grupo '{identificador_grupo}' actualizado correctamente.")
+    else:
+        print("No se especificaron campos a actualizar.")
+
+def actualizar_ubicado(idCurso, idDestino, fecha_inicio=None, fecha_fin=None):
+    campos = []
+    valores = []
+
+    if fecha_inicio:
+        campos.append("`Fecha Inicio Curso` = %s")
+        valores.append(fecha_inicio)
+    if fecha_fin:
+        campos.append("`Fecha Fin Curso` = %s")
+        valores.append(fecha_fin)
+
+    if campos:
+        sql = f"""
+            UPDATE ubicado 
+            SET {', '.join(campos)} 
+            WHERE idCurso = %s AND idDestino = %s
+        """
+        valores.extend([idCurso, idDestino])
+        c.execute(sql, valores)
+        db.commit()
+        print(f"Ubicación del curso '{idCurso}' actualizada correctamente.")
+    else:
+        print("No se especificaron campos a actualizar.")
+
+
+# ##############################
 # MAIN PARA TESTEO
 # ##############################
 
