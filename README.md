@@ -3,5 +3,11 @@
 Repositorio privado de GitHub donde estaré subiendo todos los archivos y materiales relacionados a las prácticas en DENCANTO COMMUNITY
 
 
-##### IMPORTANTE
-Una vez acabado con todo el proyecto, se subiran todos los archivos utilizados por el programa en si en una carpeta separada, para facilitar la organización e visualización del proyecto
+##### CARPETA CRUD
+Todos los archivos relacionados al CRUD de la aplicación
+
+##### CARPETA MySQL y Base de datos
+Creación de la base de datos en MySQL, DER y MR
+
+#### Aplicacion
+Carpeta donde está la aplicación final
