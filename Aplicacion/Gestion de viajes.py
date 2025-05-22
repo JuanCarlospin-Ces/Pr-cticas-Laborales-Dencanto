@@ -8,7 +8,8 @@ import mysql.connector
 db = mysql.connector.connect(
     host="127.0.0.1",
     user="root",
-    passwd="josegras"
+    passwd="josegras",
+    database="Gestion de viaje"
 )
 
 # Creo un cursor para la base de datos
@@ -20,6 +21,73 @@ c = db.cursor()
 # ################################
 
 
+#   @brief Función que  se conecta al treeview de la pestaña PERSONAS para mostrar un listado de datos
+#   @return Los respectivos datos de la entidad PERSONA, en la pestaña 
+def cargar_personas():
+
+    # Limpio el treeview primero
+    for item in tree_personas.get_children():
+        tree_personas.delete(item)
+    
+    # Consulto la base de datos
+    c.execute("""
+        SELECT p.DNI, p.Nombre, p.Apellido1, p.Apellido2, p.`Fecha de nacimiento`, p.Ciudad_Origen, 
+               IFNULL(pe.`Identificador de grupo`, 'Sin grupo')
+        FROM Persona p
+        LEFT JOIN pertenece pe ON p.DNI = pe.DNI
+    """)
+    personas = c.fetchall()
+    
+    # Insertar los datos en el treeview
+    for persona in personas:
+        tree_personas.insert("", "end", values=persona)
+
+#   @brief 
+#   @return 
+def cargar_grupos():
+    # Limpio el treeview primero
+    for item in tree_grupos.get_children():
+        tree_grupos.delete(item)
+    
+    # Consulto la base de datos
+    c.execute("""
+        SELECT g.`Identificador de grupo`, 
+               MIN(v.`Fecha Salida`), MAX(v.`Fecha Vuelta`), 
+               SUM(v.Precio), COUNT(DISTINCT v.idCurso), COUNT(DISTINCT v.idDestino)
+        FROM Grupo g
+        LEFT JOIN viaja v ON g.`Identificador de grupo` = v.`Identificador de grupo`
+        GROUP BY g.`Identificador de grupo`
+    """)
+    grupos = c.fetchall()
+    
+    # Insertar los datos en el treeview
+    for grupo in grupos:
+        tree_grupos.insert("", "end", values=grupo)
+
+#   @brief 
+#   @return 
+def cargar_itinerario():
+    # Limpiar el treeview primero
+    for item in tree_itinerario.get_children():
+        tree_itinerario.delete(item)
+    
+    # Consultar la base de datos
+    c.execute("""
+        SELECT v.`Identificador de grupo`, 
+               CONCAT(v.idCurso, '-', v.idDestino) as ID_Viaje,
+               d.Ciudad, d.Alojamiento,
+               v.`Fecha Salida`, v.`Fecha Vuelta`,
+               c.Tipo, c.idCurso, c.Escuela
+        FROM viaja v
+        JOIN Destino d ON v.idDestino = d.idDestino
+        JOIN Curso c ON v.idCurso = c.idCurso
+        ORDER BY v.`Fecha Salida`
+    """)
+    itinerarios = c.fetchall()
+    
+    # Insertar los datos en el treeview
+    for itinerario in itinerarios:
+        tree_itinerario.insert("", "end", values=itinerario)
 
 
 # ################################
@@ -218,6 +286,9 @@ for col in cols:
 tree_itinerario.place(x=400, y=20, width=1110, height=500)
 
 # EJECUCIÓN DEL PROGRAMA
+cargar_grupos()
+cargar_itinerario()
+cargar_personas()
 root.mainloop()
 
 #Cierro el cursor y la conexión a la abse de datos
