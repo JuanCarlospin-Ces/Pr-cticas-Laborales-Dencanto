@@ -56,24 +56,27 @@ def cargar_personas():
 #   @return Los respectivos datos de la entidad GRUPO, en la pestaña:
 #
 #    - Identificador de grupo
+#    - Número de integrantes
 #    - Fecha de inicio mínima del viaje del grupo
 #    - Fecha de fin máxima del viaje del grupo
 #    - Suma total del precio de los viajes del grupo
 #    - Cantidad de cursos distintos
 #    - Cantidad de destinos distintos
 def cargar_grupos():
+    
     # Limpio el treeview primero
     for item in tree_grupos.get_children():
         tree_grupos.delete(item)
     
-    # Consulto la base de datos
+    # Consulto la base de datos - MODIFICADO para incluir Numero de integrantes
     c.execute("""
         SELECT g.`Identificador de grupo`, 
+               g.`Numero de integrantes`,
                MIN(v.`Fecha Salida`), MAX(v.`Fecha Vuelta`), 
                SUM(v.Precio), COUNT(DISTINCT v.idCurso), COUNT(DISTINCT v.idDestino)
         FROM Grupo g
         LEFT JOIN viaja v ON g.`Identificador de grupo` = v.`Identificador de grupo`
-        GROUP BY g.`Identificador de grupo`
+        GROUP BY g.`Identificador de grupo`, g.`Numero de integrantes`
     """)
     grupos = c.fetchall()
     
@@ -106,6 +109,7 @@ def cargar_itinerario():
                v.`Fecha Salida`, v.`Fecha Vuelta`,
                c.Tipo, c.idCurso, c.Escuela
         FROM viaja v
+              
         JOIN Destino d ON v.idDestino = d.idDestino
         JOIN Curso c ON v.idCurso = c.idCurso
         ORDER BY v.`Fecha Salida`
@@ -172,6 +176,94 @@ def agregar_persona():
     
     cargar_personas()
     messagebox.showinfo("Estado", "Persona agregada con éxito")
+
+#   FUNCION EN DESAROLLO - ESTADO NO FUNCIONAL
+#   @brief Inserta un nuevo grupo en la base de datos, junto con los datos asociados al viaje.
+#   Esta función recoge los datos introducidos en los campos de entrada del formulario
+#   en la pestaña de "Grupos" y realiza las siguientes acciones:
+#
+#        - Verifica que todos los campos estén completos.
+#        - Inserta el grupo en la tabla Grupo (si aún no existe).
+#        - Inserta el viaje en la tabla viaja, conectando grupo, curso y destino, junto con fechas y precio.
+#        - Actualiza visualmente el treeview de grupos.
+#
+#   @return Muestra una ventana emergente informando si la operación fue exitosa o si faltan campos.
+def agregar_grupo():
+
+    id_grupo = entry_id_grupo.get()
+    num_integrantes = entry_num_integrantes.get()
+    fecha_inicio = entry_fecha_inicio.get()
+    fecha_fin = entry_fecha_fin.get()
+    precio = entry_precio.get()
+    id_destino = entry_idViaje.get() 
+    id_curso = entry_idCurso.get()
+
+    # DEBUG
+
+    print("id_grupo:", id_grupo)
+    print("fecha_inicio:", fecha_inicio)
+    print("fecha_fin:", fecha_fin)
+    print("id_curso:", id_curso)
+    print("id_destino:", id_destino)
+
+
+    # Validar campos obligatorios
+    if not (id_grupo and fecha_inicio and fecha_fin and id_curso and id_destino):
+        messagebox.showinfo("ALERTA", "Por favor, complete todos los campos obligatorios.")
+        return
+
+
+    # Insertar grupo si no existe
+    c.execute("SELECT COUNT(*) FROM Grupo WHERE `Identificador de grupo` = %s", (id_grupo,))
+    if c.fetchone()[0] == 0:
+        c.execute("INSERT INTO Grupo (`Identificador de grupo`,`Numero de integrantes`) VALUES (%s, %s)", (id_grupo,num_integrantes))
+
+    # Verificar si el valores de curso existen en la tabla Curso
+
+    c.execute("SELECT COUNT(*) FROM curso WHERE idCurso = %s", (id_curso,))
+    existe = c.fetchone()[0]
+    
+    if not existe:
+        # Crear automáticamente Curso con el id
+        c.execute("""
+            INSERT INTO curso (idCurso)
+            VALUES (%s)
+        """, (id_curso,))
+
+    # Verificar si el valores de destino existen en la tabla Destino
+    
+    c.execute("SELECT COUNT(*) FROM destino WHERE idDestino = %s", (id_destino,))
+    existe_destino = c.fetchone()[0]
+    
+    if not existe_destino:
+        # Crear automáticamente Destino con el id
+        c.execute("""
+            INSERT INTO destino (idDestino)
+            VALUES (%s)
+        """, (id_destino,))
+
+    # Verificar si los valores de curso y destino existen en la tabla ubicado
+    c.execute("SELECT COUNT(*) FROM ubicado WHERE idCurso = %s AND idDestino = %s", (id_curso, id_destino))
+    existe = c.fetchone()[0]
+    
+    if not existe:
+        # Crear automáticamente con las fechas insertadas
+        c.execute("""
+            INSERT INTO ubicado (idCurso, idDestino, `Fecha Inicio Curso`, `Fecha Fin Curso`)
+            VALUES (%s, %s, %s, %s)
+        """, (id_curso, id_destino, fecha_inicio, fecha_fin))
+
+    # Insertar viaje en tabla viaja
+    c.execute("""
+        INSERT INTO viaja (`Identificador de grupo`, idCurso, idDestino, `Fecha Salida`, `Fecha Vuelta`, Precio)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """, (id_grupo, id_curso, id_destino, fecha_inicio, fecha_fin, precio))
+
+    db.commit()
+    cargar_grupos()
+    messagebox.showinfo("Estado", "Grupo y viaje agregado con éxito.")
+
+
 
 # ################################
 # INTERFAZ GRAFICA
@@ -286,20 +378,20 @@ entry_fecha_fin = ttk.Entry(tab_grupos, font=("verdana", 11))
 entry_fecha_fin.place(x=260, y=140)
 
 ttk.Label(tab_grupos, text="Precio:", font=("verdana", 11)).place(x=50, y=180)
-entry_fecha_fin = ttk.Entry(tab_grupos, font=("verdana", 11))
-entry_fecha_fin.place(x=115, y=180)
+entry_precio = ttk.Entry(tab_grupos, font=("verdana", 11))
+entry_precio.place(x=115, y=180)
 
 ttk.Label(tab_grupos, text="ID Viaje:", font=("verdana", 11)).place(x=50, y=220)
-entry_fecha_fin = ttk.Entry(tab_grupos, font=("verdana", 11))
-entry_fecha_fin.place(x=125, y=220)
+entry_idViaje = ttk.Entry(tab_grupos, font=("verdana", 11))
+entry_idViaje.place(x=125, y=220)
 
 ttk.Label(tab_grupos, text="ID Curso:", font=("verdana", 11)).place(x=50, y=260)
-entry_fecha_fin = ttk.Entry(tab_grupos, font=("verdana", 11))
-entry_fecha_fin.place(x=125, y=260)
+entry_idCurso = ttk.Entry(tab_grupos, font=("verdana", 11))
+entry_idCurso.place(x=125, y=260)
 
 # BOTONES
 
-btn_agregar_grupo = ttk.Button(tab_grupos, text="Agregar")
+btn_agregar_grupo = ttk.Button(tab_grupos, text="Agregar",command=agregar_grupo)
 btn_agregar_grupo.place(x=50, y=300)
 
 btn_borrar_grupo = ttk.Button(tab_grupos, text="Borrar")
@@ -311,15 +403,15 @@ btn_actualizar_grupo.place(x=250, y=300)
 btn_buscar_grupo = ttk.Button(tab_grupos, text="Buscar")
 btn_buscar_grupo.place(x=350, y=300)
 
-# Treeview para mostrar datos de los cursos
-cols = ("Grupo","Fecha de Inicio", "Fecha de Fin", "Precio","ID Viaje","ID Curso")
+# Treeview para mostrar datos de los grupos
+cols = ("Grupo","Número de integrantes","Fecha de Inicio", "Fecha de Fin", "Precio","ID Viaje","ID Curso")
 tree_grupos = ttk.Treeview(tab_grupos, columns=cols, show="headings", height=20)
 
 for col in cols:
     tree_grupos.heading(col, text=col)
     tree_grupos.column(col, width=120)
 
-tree_grupos.place(x=600, y=20, width=860, height=500)
+tree_grupos.place(x=590, y=20, width=910, height=500)
 
 # ------------------------------------------------------------------------------------------
 #  Gestión de ITINERARIOS
@@ -329,32 +421,32 @@ tab_itinerario = ttk.Frame(notebook)
 notebook.add(tab_itinerario, text="Itinerario")
 
 ttk.Label(tab_itinerario, text="ID Viaje:", font=("verdana", 11)).place(x=30, y=20)
-entry_id_grupo = ttk.Entry(tab_itinerario, font=("verdana", 11))
-entry_id_grupo.place(x=110, y=20)
+entry_id_grupo_Itinerario = ttk.Entry(tab_itinerario, font=("verdana", 11))
+entry_id_grupo_Itinerario.place(x=110, y=20)
 
 ttk.Label(tab_itinerario, text="Ciudad:", font=("verdana", 11)).place(x=30, y=60)
-entry_num_integrantes = ttk.Entry(tab_itinerario, font=("verdana", 11))
-entry_num_integrantes.place(x=95, y=60)
+entry_ciudad_itinerario = ttk.Entry(tab_itinerario, font=("verdana", 11))
+entry_ciudad_itinerario.place(x=95, y=60)
 
 ttk.Label(tab_itinerario, text="Inicio(YYYY-MM-DD):", font=("verdana", 11)).place(x=30, y=100)
-entry_fecha_inicio = ttk.Entry(tab_itinerario, font=("verdana", 11))
-entry_fecha_inicio.place(x=190, y=100)
+entry_fecha_inicio_Itinerario = ttk.Entry(tab_itinerario, font=("verdana", 11))
+entry_fecha_inicio_Itinerario.place(x=190, y=100)
 
 ttk.Label(tab_itinerario, text="Fin(YYYY-MM-DD):", font=("verdana", 11)).place(x=30, y=140)
-entry_fecha_fin = ttk.Entry(tab_itinerario, font=("verdana", 11))
-entry_fecha_fin.place(x=175, y=140)
+entry_fecha_fin_Itinerario = ttk.Entry(tab_itinerario, font=("verdana", 11))
+entry_fecha_fin_Itinerario.place(x=175, y=140)
 
 ttk.Label(tab_itinerario, text="Tipo curso:", font=("verdana", 11)).place(x=30, y=180)
-entry_fecha_fin = ttk.Entry(tab_itinerario, font=("verdana", 11))
-entry_fecha_fin.place(x=125, y=180)
+entry_curso = ttk.Entry(tab_itinerario, font=("verdana", 11))
+entry_curso.place(x=125, y=180)
 
 ttk.Label(tab_itinerario, text="ID Curso:", font=("verdana", 11)).place(x=30, y=220)
-entry_fecha_fin = ttk.Entry(tab_itinerario, font=("verdana", 11))
-entry_fecha_fin.place(x=110, y=220)
+entry_idCurso_Itinerario = ttk.Entry(tab_itinerario, font=("verdana", 11))
+entry_idCurso_Itinerario.place(x=110, y=220)
 
 ttk.Label(tab_itinerario, text="Escuela:", font=("verdana", 11)).place(x=30, y=260)
-entry_fecha_fin = ttk.Entry(tab_itinerario, font=("verdana", 11))
-entry_fecha_fin.place(x=100, y=260)
+entry_Escuela = ttk.Entry(tab_itinerario, font=("verdana", 11))
+entry_Escuela.place(x=100, y=260)
 
 # BOTONES
 
